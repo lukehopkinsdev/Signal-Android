@@ -166,7 +166,7 @@ android {
         versionName canonicalVersionName
 
         minSdkVersion signalMinSdkVersion
-        targetSdkVersion signalTargetSdkVersion
+        compileSdkPreview = "UpsideDownCake"
 
         multiDexEnabled true
 
@@ -501,6 +501,7 @@ dependencies {
     implementation libs.androidx.profileinstaller
     implementation libs.androidx.asynclayoutinflater
     implementation libs.androidx.asynclayoutinflater.appcompat
+    implementation libs.androidx.core.telecom
 
     implementation (libs.firebase.messaging) {
         exclude group: 'com.google.firebase', module: 'firebase-core'
