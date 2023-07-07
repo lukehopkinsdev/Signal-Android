@@ -142,6 +142,8 @@ public class IncomingCallActionProcessor extends DeviceAwareActionProcessor {
       return callFailure(currentState, "accept() failed: ", e);
     }
 
+    AndroidTelecomUtil.acceptCall(activePeer.getRecipient().getId());
+
     return currentState;
   }
 

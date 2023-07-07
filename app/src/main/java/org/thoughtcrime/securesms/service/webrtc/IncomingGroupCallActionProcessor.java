@@ -222,6 +222,8 @@ public final class IncomingGroupCallActionProcessor extends DeviceAwareActionPro
       return groupCallFailure(currentState, "Unable to join group call", e);
     }
 
+    AndroidTelecomUtil.acceptCall(currentState.getCallInfoState().getCallRecipient().getId());
+
     return currentState.builder()
                        .actionProcessor(MultiPeerActionProcessorFactory.GroupActionProcessorFactory.INSTANCE.createJoiningActionProcessor(webRtcInteractor))
                        .changeCallInfoState()

@@ -1035,13 +1035,6 @@
     <service android:enabled="true" android:exported="false" android:name=".service.KeyCachingService"/>
     <service android:enabled="true" android:name=".messages.IncomingMessageObserver$ForegroundService"/>
     <service android:enabled="true" android:name=".messages.IncomingMessageObserver$BackgroundService"/>
-    <service android:name=".service.webrtc.AndroidCallConnectionService"
-        android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.telecom.ConnectionService" />
-        </intent-filter>
-    </service>
 
     <service android:name=".components.voice.VoiceNotePlaybackService" android:exported="true">
         <intent-filter>
