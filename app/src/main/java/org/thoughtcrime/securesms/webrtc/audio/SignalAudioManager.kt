@@ -122,6 +122,8 @@ sealed class SignalAudioManager(protected val context: Context, protected val ev
     constructor(device: Int) {
       desiredAudioDevice31 = device
     }
+
+
   }
 
   interface EventListener {

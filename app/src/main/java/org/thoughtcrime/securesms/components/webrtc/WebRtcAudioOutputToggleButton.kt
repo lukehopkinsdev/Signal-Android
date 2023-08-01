@@ -14,6 +14,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.fragment.app.FragmentActivity
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.R
+import org.thoughtcrime.securesms.service.webrtc.AndroidTelecomUtil
 
 /**
  * A UI button that triggers a picker dialog/bottom sheet allowing the user to select the audio output for the ongoing call.
@@ -58,9 +59,28 @@ class WebRtcAudioOutputToggleButton @JvmOverloads constructor(context: Context, 
     }
   }
 
+
+  private val clickListenerTelecom = OnClickListener {
+    if (picker != null) {
+      Log.d(TAG, "Tried to launch new audio device picker but one is already present.")
+      return@OnClickListener
+    }
+
+    val fragmentActivity = context.fragmentActivity()
+    if (fragmentActivity != null) {
+      picker = WebRtcAudioPickerTelecom(audioOutputChangedListener, outputState, this).showPicker(fragmentActivity,) { picker = null }
+    } else {
+      Log.e(TAG, "WebRtcAudioOutputToggleButton instantiated from a context that does not inherit from FragmentActivity.")
+      Toast.makeText(context, R.string.WebRtcAudioOutputToggleButton_fragment_activity_error, Toast.LENGTH_LONG).show()
+    }
+  }
+
   init {
     super.setOnClickListener(
-      if (Build.VERSION.SDK_INT >= 31) {
+      if(AndroidTelecomUtil.telecomSupported){
+        clickListenerTelecom
+      }
+      else if (Build.VERSION.SDK_INT >= 31) {
         clickListener31
       } else {
         clickListenerLegacy
@@ -119,6 +139,11 @@ class WebRtcAudioOutputToggleButton @JvmOverloads constructor(context: Context, 
     outputState.isBluetoothHeadsetAvailable = isBluetoothHeadsetAvailable
     outputState.isWiredHeadsetAvailable = isHeadsetAvailable
     refreshDrawableState()
+  }
+
+  fun updateAvailableOutputDevices(audioDevices: Set<WebRtcAudioOutput>){
+
+
   }
 
   override fun updateAudioOutputState(audioOutput: WebRtcAudioOutput) {

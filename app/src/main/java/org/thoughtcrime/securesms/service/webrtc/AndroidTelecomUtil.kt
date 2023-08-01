@@ -33,6 +33,7 @@ import org.thoughtcrime.securesms.webrtc.CallNotificationBuilder
 @SuppressLint("NewApi", "InlinedApi")
 object AndroidTelecomUtil {
 
+  private lateinit var activeId: RecipientId
   private val TAG = Log.tag(AndroidTelecomUtil::class.java)
   private val context = ApplicationDependencies.getApplication()
   private val callsManager = CallsManager(context)
@@ -75,6 +76,7 @@ object AndroidTelecomUtil {
   @JvmStatic
   fun activateCall(recipientId: RecipientId) {
     if (telecomSupported) {
+      activeId = recipientId
       connections[recipientId]?.setActive()
     }
   }
@@ -159,6 +161,10 @@ object AndroidTelecomUtil {
   private fun isTelecomAllowedForDevice(): Boolean {
     val pm = context.packageManager
     return Build.VERSION.SDK_INT >= 26 && pm.hasSystemFeature(PackageManager.FEATURE_TELECOM)
+  }
+
+  fun getActiveConnection(): AndroidCallScope {
+    return connections[activeId]!!
   }
 }
 
