@@ -26,7 +26,7 @@ public final class WebRtcControls {
                                                                GroupCallState.NONE,
                                                                null,
                                                                FoldableState.flat(),
-                                                               SignalAudioManager.AudioDevice.NONE,
+                                                               new SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.NONE),
                                                                emptySet(),
                                                                false);
 
@@ -53,7 +53,7 @@ public final class WebRtcControls {
          GroupCallState.NONE,
          null,
          FoldableState.flat(),
-         SignalAudioManager.AudioDevice.NONE,
+         new SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.NONE),
          emptySet(),
          false);
   }
@@ -183,11 +183,11 @@ public final class WebRtcControls {
   }
 
   boolean isBluetoothHeadsetAvailableForAudioToggle() {
-    return availableDevices.contains(SignalAudioManager.AudioDevice.BLUETOOTH);
+    return availableDevices.contains(SignalAudioManager.AudioDeviceType.BLUETOOTH);
   }
 
   boolean isWiredHeadsetAvailableForAudioToggle() {
-    return availableDevices.contains(SignalAudioManager.AudioDevice.WIRED_HEADSET);
+    return availableDevices.contains(SignalAudioManager.AudioDeviceType.WIRED_HEADSET);
   }
 
   boolean isFadeOutEnabled() {
@@ -207,7 +207,7 @@ public final class WebRtcControls {
   }
 
   @NonNull WebRtcAudioOutput getAudioOutput() {
-    switch (activeDevice) {
+    switch (activeDevice.getAudioDeviceType()) {
       case SPEAKER_PHONE:
         return WebRtcAudioOutput.SPEAKER;
       case BLUETOOTH:

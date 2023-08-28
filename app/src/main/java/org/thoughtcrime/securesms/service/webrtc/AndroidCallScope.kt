@@ -5,7 +5,11 @@
 
 package org.thoughtcrime.securesms.service.webrtc
 
+import android.annotation.SuppressLint
+import android.os.Build
+import android.os.ParcelUuid
 import android.telecom.DisconnectCause
+import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlScope
 import androidx.core.telecom.CallEndpointCompat
@@ -23,7 +27,7 @@ class AndroidCallScope (private var callControlScope: CallControlScope, private 
 
   val disconnectCause: DisconnectCause? = null
   private val coroutineScope = CoroutineScope(Dispatchers.Unconfined)
-  var currentCallEndpoint: SignalAudioManager.AudioDevice? = null
+  var currentCallEndpoint: CallEndpointCompat? = null
   var availableEndpoints : List<CallEndpointCompat>? = null
   private val context = ApplicationDependencies.getApplication()
 
@@ -37,7 +41,7 @@ class AndroidCallScope (private var callControlScope: CallControlScope, private 
 
     callControlScope.currentCallEndpoint
       .onEach {
-        currentCallEndpoint = it.toAudioDevice()
+        currentCallEndpoint = it
         onAudioDeviceChanged()
       }
       .launchIn(coroutineScope)
@@ -75,15 +79,20 @@ class AndroidCallScope (private var callControlScope: CallControlScope, private 
     }
   }
 
+  @SuppressLint("LogTagInlined")
   private fun onAudioDeviceChanged() {
     if(availableEndpoints != null) {
       currentCallEndpoint?.let {
-          ApplicationDependencies.getSignalCallManager().onAudioDeviceChanged(it, availableEndpoints!!.map { device -> device.toAudioDevice() }.toMutableSet())
+        availableEndpoints!!.forEach{
+          Log.e("TELECOM SCOPE", it.name.toString() + it.identifier.toString())
+        }
+        Log.e("TELECOM SCOPE", "Currently Device: " + currentCallEndpoint!!.name.toString() + currentCallEndpoint!!.identifier.toString())
+          //ApplicationDependencies.getSignalCallManager().onAudioDeviceChanged(it.toAudioDevice(), availableEndpoints!!.map { device -> device.toAudioDevice() }.toMutableSet())
         }
     }
   }
 
-  fun setAudioRoute(newRoute: SignalAudioManager.AudioDevice) {
+  /*fun setAudioRoute(newRoute: SignalAudioManager.AudioDevice) {
     availableEndpoints?.let{ callEndpoints ->
       coroutineScope.launch {
         var audioDevice = when (newRoute) {
@@ -97,19 +106,35 @@ class AndroidCallScope (private var callControlScope: CallControlScope, private 
         audioDevice?.let { callControlScope.requestEndpointChange(it) }
       }
     }
+  }*/
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  fun setAudioRoute(newRoute: ParcelUuid){
+    val endpoint = availableEndpoints?.find { it.identifier == newRoute }
+
+    endpoint?.let{
+      coroutineScope.launch {
+        callControlScope.requestEndpointChange(endpoint)
+      }
+    }
   }
 
 
-  private fun CallEndpointCompat.toAudioDevice(): SignalAudioManager.AudioDevice {
-    return when (this.type) {
-      CallEndpointCompat.TYPE_EARPIECE -> SignalAudioManager.AudioDevice.EARPIECE
-      CallEndpointCompat.TYPE_BLUETOOTH -> SignalAudioManager.AudioDevice.BLUETOOTH
-      CallEndpointCompat.TYPE_WIRED_HEADSET -> SignalAudioManager.AudioDevice.WIRED_HEADSET
-      CallEndpointCompat.TYPE_SPEAKER -> SignalAudioManager.AudioDevice.SPEAKER_PHONE
+  @RequiresApi(Build.VERSION_CODES.O)
+  fun CallEndpointCompat.toAudioDevice(): SignalAudioManager.AudioDevice {
+    val device = when (this.type) {
+      CallEndpointCompat.TYPE_EARPIECE -> SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.EARPIECE)
+      CallEndpointCompat.TYPE_BLUETOOTH -> SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.BLUETOOTH)
+      CallEndpointCompat.TYPE_WIRED_HEADSET -> SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.WIRED_HEADSET)
+      CallEndpointCompat.TYPE_SPEAKER -> SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.SPEAKER_PHONE)
       else -> {
-        SignalAudioManager.AudioDevice.NONE
+        SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.NONE)
       }
     }
+
+    device.Id = this.identifier
+
+    return device
   }
 
   companion object {

@@ -82,9 +82,9 @@ public class CallSetupActionProcessorDelegate extends WebRtcActionProcessor {
     }
 
     if (currentState.getCallSetupState(activePeer).isAcceptWithVideo() || currentState.getLocalDeviceState().getCameraState().isEnabled()) {
-      webRtcInteractor.setDefaultAudioDevice(activePeer.getId(), SignalAudioManager.AudioDevice.SPEAKER_PHONE, false);
+      webRtcInteractor.setDefaultAudioDevice(activePeer.getId(), new SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.SPEAKER_PHONE), false);
     } else {
-      webRtcInteractor.setDefaultAudioDevice(activePeer.getId(), SignalAudioManager.AudioDevice.EARPIECE, false);
+      webRtcInteractor.setDefaultAudioDevice(activePeer.getId(), new SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.EARPIECE), false);
     }
 
     return currentState;

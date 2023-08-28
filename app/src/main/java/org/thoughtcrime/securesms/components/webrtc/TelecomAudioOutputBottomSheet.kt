@@ -26,6 +26,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.telecom.CallEndpointCompat
+import androidx.core.telecom.CallEndpointCompat.Companion.TYPE_BLUETOOTH
+import androidx.core.telecom.CallEndpointCompat.Companion.TYPE_EARPIECE
+import androidx.core.telecom.CallEndpointCompat.Companion.TYPE_SPEAKER
+import androidx.core.telecom.CallEndpointCompat.Companion.TYPE_WIRED_HEADSET
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
@@ -35,13 +40,12 @@ import org.signal.core.ui.BottomSheets
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.compose.ComposeBottomSheetDialogFragment
 import org.thoughtcrime.securesms.util.BottomSheetUtil
-import org.thoughtcrime.securesms.webrtc.audio.SignalAudioManager
 
 /**
  * A bottom sheet that allows the user to select what device they want to route audio to. Intended to be used with Android 31+ APIs.
  */
-class WebRtcAudioOutputBottomSheet : ComposeBottomSheetDialogFragment(), DialogInterface {
-  private val viewModel by viewModels<AudioOutputViewModel>()
+class TelecomAudioOutputBottomSheet : ComposeBottomSheetDialogFragment(), DialogInterface {
+  private val viewModel by viewModels<TelecomAudioOutputViewModel>()
 
   @Composable
   override fun SheetContent() {
@@ -52,7 +56,7 @@ class WebRtcAudioOutputBottomSheet : ComposeBottomSheetDialogFragment(), DialogI
         .wrapContentSize()
     ) {
       BottomSheets.Handle()
-      DeviceList(audioOutputOptions = viewModel.audioRoutes.toImmutableList(), initialDeviceId = viewModel.defaultDeviceId, modifier = Modifier.fillMaxWidth(), onDeviceSelected = viewModel.onClick)
+      DeviceList(audioOutputOptions = viewModel.audioRoutes.toImmutableList(), initialDeviceId = viewModel.defaultDeviceId!!, modifier = Modifier.fillMaxWidth(), onDeviceSelected = viewModel.onClick)
     }
   }
 
@@ -60,7 +64,7 @@ class WebRtcAudioOutputBottomSheet : ComposeBottomSheetDialogFragment(), DialogI
     dismiss()
   }
 
-  fun show(fm: FragmentManager, tag: String?, audioRoutes: List<AudioOutputOption>, selectedDeviceId: Int, onClick: (AudioOutputOption) -> Unit, onDismiss: (DialogInterface) -> Unit) {
+  fun show(fm: FragmentManager, tag: String?, audioRoutes: List<TelecomAudioOutputOption>, selectedDeviceId: ParcelUuid, onClick: (TelecomAudioOutputOption) -> Unit, onDismiss: (DialogInterface) -> Unit) {
     super.showNow(fm, tag)
     viewModel.audioRoutes = audioRoutes
     viewModel.defaultDeviceId = selectedDeviceId
@@ -74,11 +78,11 @@ class WebRtcAudioOutputBottomSheet : ComposeBottomSheetDialogFragment(), DialogI
   }
 
   companion object {
-    const val TAG = "WebRtcAudioOutputBottomSheet"
+    const val TAG = "TelecomAudioOutputBottomSheet"
 
     @JvmStatic
-    fun show(fragmentManager: FragmentManager, audioRoutes: List<AudioOutputOption>, selectedDeviceId: Int, onClick: (AudioOutputOption) -> Unit, onDismiss: (DialogInterface) -> Unit): WebRtcAudioOutputBottomSheet {
-      val bottomSheet = WebRtcAudioOutputBottomSheet()
+    fun show(fragmentManager: FragmentManager, audioRoutes: List<TelecomAudioOutputOption>, selectedDeviceId: ParcelUuid, onClick: (TelecomAudioOutputOption) -> Unit, onDismiss: (DialogInterface) -> Unit): TelecomAudioOutputBottomSheet {
+      val bottomSheet = TelecomAudioOutputBottomSheet()
       bottomSheet.show(fragmentManager, BottomSheetUtil.STANDARD_BOTTOM_SHEET_FRAGMENT_TAG, audioRoutes, selectedDeviceId, onClick, onDismiss)
       return bottomSheet
     }
@@ -86,7 +90,7 @@ class WebRtcAudioOutputBottomSheet : ComposeBottomSheetDialogFragment(), DialogI
 }
 
 @Composable
-fun DeviceList(audioOutputOptions: ImmutableList<AudioOutputOption>, initialDeviceId: Int, modifier: Modifier = Modifier.fillMaxWidth(), onDeviceSelected: (AudioOutputOption) -> Unit) {
+fun DeviceList(audioOutputOptions: ImmutableList<TelecomAudioOutputOption>, initialDeviceId: ParcelUuid, modifier: Modifier = Modifier.fillMaxWidth(), onDeviceSelected: (TelecomAudioOutputOption) -> Unit) {
   var selectedDeviceId by rememberSaveable { mutableStateOf(initialDeviceId) }
   Column(
     horizontalAlignment = Alignment.Start,
@@ -99,7 +103,7 @@ fun DeviceList(audioOutputOptions: ImmutableList<AudioOutputOption>, initialDevi
         .padding(8.dp)
     )
     Column(Modifier.selectableGroup()) {
-      audioOutputOptions.forEach { device: AudioOutputOption ->
+      audioOutputOptions.forEach { device: TelecomAudioOutputOption ->
         Row(
           Modifier
             .fillMaxWidth()
@@ -121,8 +125,8 @@ fun DeviceList(audioOutputOptions: ImmutableList<AudioOutputOption>, initialDevi
           )
           Icon(
             modifier = Modifier.padding(start = 16.dp),
-            painter = painterResource(id = getDrawableResourceForDeviceType(device.deviceType)),
-            contentDescription = stringResource(id = getDescriptionStringResourceForDeviceType(device.deviceType)),
+            painter = painterResource(id = getDrawableResourceForDeviceType(device.type)),
+            contentDescription = stringResource(id = getDescriptionStringResourceForDeviceType(device.type)),
             tint = MaterialTheme.colorScheme.onSurface
           )
           Text(
@@ -136,41 +140,32 @@ fun DeviceList(audioOutputOptions: ImmutableList<AudioOutputOption>, initialDevi
   }
 }
 
-class AudioOutputViewModel : ViewModel() {
-  var audioRoutes: List<AudioOutputOption> = emptyList()
-  var defaultDeviceId: Int = -1
-  var onClick: (AudioOutputOption) -> Unit = {}
+class TelecomAudioOutputViewModel : ViewModel() {
+  var audioRoutes: List<TelecomAudioOutputOption> = emptyList()
+  var defaultDeviceId: ParcelUuid? = null
+  var onClick: (TelecomAudioOutputOption) -> Unit = {}
   var onDismiss: (DialogInterface) -> Unit = {}
 }
 
-private fun getDrawableResourceForDeviceType(deviceType: SignalAudioManager.AudioDevice): Int {
-  return when (deviceType.audioDeviceType) {
-    SignalAudioManager.AudioDeviceType.WIRED_HEADSET -> R.drawable.symbol_headphones_outline_24
-    SignalAudioManager.AudioDeviceType.EARPIECE -> R.drawable.symbol_phone_speaker_outline_24
-    SignalAudioManager.AudioDeviceType.BLUETOOTH -> R.drawable.symbol_speaker_bluetooth_fill_white_24
-    SignalAudioManager.AudioDeviceType.SPEAKER_PHONE, SignalAudioManager.AudioDeviceType.NONE -> R.drawable.symbol_speaker_outline_24
+private fun getDrawableResourceForDeviceType(@CallEndpointCompat.Companion.EndpointType deviceType: Int): Int {
+  return when (deviceType) {
+    TYPE_WIRED_HEADSET -> R.drawable.symbol_headphones_outline_24
+    TYPE_EARPIECE -> R.drawable.symbol_phone_speaker_outline_24
+    TYPE_BLUETOOTH -> R.drawable.symbol_speaker_bluetooth_fill_white_24
+    TYPE_SPEAKER -> R.drawable.symbol_speaker_outline_24
+    else -> R.drawable.symbol_speaker_outline_24
   }
 }
 
-private fun getDescriptionStringResourceForDeviceType(deviceType: SignalAudioManager.AudioDevice): Int {
-  return when (deviceType.audioDeviceType) {
-    SignalAudioManager.AudioDeviceType.WIRED_HEADSET -> R.string.WebRtcAudioOutputBottomSheet__headset_icon_content_description
-    SignalAudioManager.AudioDeviceType.EARPIECE -> R.string.WebRtcAudioOutputBottomSheet__earpiece_icon_content_description
-    SignalAudioManager.AudioDeviceType.BLUETOOTH -> R.string.WebRtcAudioOutputBottomSheet__bluetooth_icon_content_description
-    SignalAudioManager.AudioDeviceType.SPEAKER_PHONE, SignalAudioManager.AudioDeviceType.NONE -> R.string.WebRtcAudioOutputBottomSheet__speaker_icon_content_description
+private fun getDescriptionStringResourceForDeviceType(@CallEndpointCompat.Companion.EndpointType deviceType: Int): Int {
+  return when (deviceType) {
+    TYPE_WIRED_HEADSET -> R.string.WebRtcAudioOutputBottomSheet__headset_icon_content_description
+    TYPE_EARPIECE -> R.string.WebRtcAudioOutputBottomSheet__earpiece_icon_content_description
+    TYPE_BLUETOOTH-> R.string.WebRtcAudioOutputBottomSheet__bluetooth_icon_content_description
+    TYPE_SPEAKER -> R.string.WebRtcAudioOutputBottomSheet__speaker_icon_content_description
+    else -> R.string.WebRtcAudioOutputBottomSheet__speaker_icon_content_description
   }
 }
 
-data class AudioOutputOption(val friendlyName: String, val deviceType: SignalAudioManager.AudioDevice, val deviceId: Int)
+data class TelecomAudioOutputOption(val friendlyName: String, @CallEndpointCompat.Companion.EndpointType val type: Int, val deviceId: ParcelUuid)
 
-@Preview
-@Composable
-private fun SampleOutputBottomSheet() {
-  val outputs: ImmutableList<AudioOutputOption> = listOf(
-    AudioOutputOption("Earpiece", SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.EARPIECE), 0),
-    AudioOutputOption("Speaker", SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.SPEAKER_PHONE), 1),
-    AudioOutputOption("BT Headset", SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.BLUETOOTH), 2),
-    AudioOutputOption("Wired Headset", SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.WIRED_HEADSET), 3)
-  ).toImmutableList()
-  DeviceList(outputs, 0) { }
-}

@@ -30,7 +30,7 @@ class WebRtcAudioPicker31(private val audioOutputChangedListener: OnAudioOutputC
       return null
     }
 
-    val devices: List<AudioOutputOption> = am.availableCommunicationDevices.map { AudioOutputOption(it.toFriendlyName(fragmentActivity).toString(), AudioDeviceMapping.fromPlatformType(it.type), it.id) }.distinct().filterNot { it.deviceType == SignalAudioManager.AudioDevice.NONE }
+    val devices: List<AudioOutputOption> = am.availableCommunicationDevices.map { AudioOutputOption(it.toFriendlyName(fragmentActivity).toString(), SignalAudioManager.AudioDevice(AudioDeviceMapping.fromPlatformType(it.type)), it.id) }.distinct().filterNot { it.deviceType.audioDeviceType == SignalAudioManager.AudioDeviceType.NONE }
     val currentDeviceId = am.communicationDevice?.id ?: -1
     if (devices.size < threshold) {
       Log.d(TAG, "Only found $devices devices,\nnot showing picker.")
@@ -51,23 +51,23 @@ class WebRtcAudioPicker31(private val audioOutputChangedListener: OnAudioOutputC
   val onAudioDeviceSelected: (AudioOutputOption) -> Unit = {
     audioOutputChangedListener.audioOutputChanged(WebRtcAudioDevice(it.toWebRtcAudioOutput(), it.deviceId))
 
-    when (it.deviceType) {
-      SignalAudioManager.AudioDevice.WIRED_HEADSET -> {
+    when (it.deviceType.audioDeviceType) {
+      SignalAudioManager.AudioDeviceType.WIRED_HEADSET -> {
         outputState.isWiredHeadsetAvailable = true
         stateUpdater.updateAudioOutputState(WebRtcAudioOutput.WIRED_HEADSET)
       }
 
-      SignalAudioManager.AudioDevice.EARPIECE -> {
+      SignalAudioManager.AudioDeviceType.EARPIECE -> {
         outputState.isEarpieceAvailable = true
         stateUpdater.updateAudioOutputState(WebRtcAudioOutput.HANDSET)
       }
 
-      SignalAudioManager.AudioDevice.BLUETOOTH -> {
+      SignalAudioManager.AudioDeviceType.BLUETOOTH -> {
         outputState.isBluetoothHeadsetAvailable = true
         stateUpdater.updateAudioOutputState(WebRtcAudioOutput.BLUETOOTH_HEADSET)
       }
 
-      SignalAudioManager.AudioDevice.SPEAKER_PHONE, SignalAudioManager.AudioDevice.NONE -> stateUpdater.updateAudioOutputState(WebRtcAudioOutput.SPEAKER)
+      SignalAudioManager.AudioDeviceType.SPEAKER_PHONE, SignalAudioManager.AudioDeviceType.NONE -> stateUpdater.updateAudioOutputState(WebRtcAudioOutput.SPEAKER)
     }
   }
 
@@ -83,11 +83,11 @@ class WebRtcAudioPicker31(private val audioOutputChangedListener: OnAudioOutputC
   }
 
   private fun AudioOutputOption.toWebRtcAudioOutput(): WebRtcAudioOutput {
-    return when (this.deviceType) {
-      SignalAudioManager.AudioDevice.WIRED_HEADSET -> WebRtcAudioOutput.WIRED_HEADSET
-      SignalAudioManager.AudioDevice.EARPIECE -> WebRtcAudioOutput.HANDSET
-      SignalAudioManager.AudioDevice.BLUETOOTH -> WebRtcAudioOutput.BLUETOOTH_HEADSET
-      SignalAudioManager.AudioDevice.SPEAKER_PHONE, SignalAudioManager.AudioDevice.NONE -> WebRtcAudioOutput.SPEAKER
+    return when (this.deviceType.audioDeviceType) {
+      SignalAudioManager.AudioDeviceType.WIRED_HEADSET -> WebRtcAudioOutput.WIRED_HEADSET
+      SignalAudioManager.AudioDeviceType.EARPIECE -> WebRtcAudioOutput.HANDSET
+      SignalAudioManager.AudioDeviceType.BLUETOOTH -> WebRtcAudioOutput.BLUETOOTH_HEADSET
+      SignalAudioManager.AudioDeviceType.SPEAKER_PHONE, SignalAudioManager.AudioDeviceType.NONE -> WebRtcAudioOutput.SPEAKER
     }
   }
 }

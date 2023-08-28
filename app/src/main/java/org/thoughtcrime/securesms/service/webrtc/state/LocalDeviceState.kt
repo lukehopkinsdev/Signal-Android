@@ -14,7 +14,7 @@ data class LocalDeviceState constructor(
   var orientation: Orientation = Orientation.PORTRAIT_BOTTOM_EDGE,
   var isLandscapeEnabled: Boolean = false,
   var deviceOrientation: Orientation = Orientation.PORTRAIT_BOTTOM_EDGE,
-  var activeDevice: SignalAudioManager.AudioDevice = SignalAudioManager.AudioDevice.NONE,
+  var activeDevice: SignalAudioManager.AudioDevice = SignalAudioManager.AudioDevice(SignalAudioManager.AudioDeviceType.NONE),
   var availableDevices: Set<SignalAudioManager.AudioDevice> = emptySet(),
   var bluetoothPermissionDenied: Boolean = false,
   var networkConnectionType: PeerConnection.AdapterType = PeerConnection.AdapterType.UNKNOWN

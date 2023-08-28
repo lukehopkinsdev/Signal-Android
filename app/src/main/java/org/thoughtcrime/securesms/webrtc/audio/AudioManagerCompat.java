@@ -56,7 +56,7 @@ public abstract class AudioManagerCompat {
 
   public boolean isBluetoothHeadsetAvailable() {
     if (Build.VERSION.SDK_INT >= 31) {
-      return audioManager.getAvailableCommunicationDevices().stream().anyMatch(it -> AudioDeviceMapping.fromPlatformType(it.getType()) == SignalAudioManager.AudioDevice.BLUETOOTH);
+      return audioManager.getAvailableCommunicationDevices().stream().anyMatch(it -> AudioDeviceMapping.fromPlatformType(it.getType()) == SignalAudioManager.AudioDeviceType.BLUETOOTH);
     } else {
       BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
       return mBluetoothAdapter != null &&
@@ -69,8 +69,8 @@ public abstract class AudioManagerCompat {
 
   public boolean isBluetoothConnected() {
     if (Build.VERSION.SDK_INT >= 31) {
-      final SignalAudioManager.AudioDevice audioDevice = AudioDeviceMapping.fromPlatformType(audioManager.getCommunicationDevice().getType());
-      return SignalAudioManager.AudioDevice.BLUETOOTH == audioDevice;
+      final SignalAudioManager.AudioDeviceType audioDevice = AudioDeviceMapping.fromPlatformType(audioManager.getCommunicationDevice().getType());
+      return SignalAudioManager.AudioDeviceType.BLUETOOTH == audioDevice;
     } else {
       return isBluetoothScoOn();
     }
@@ -114,7 +114,7 @@ public abstract class AudioManagerCompat {
 
   @RequiresApi(31)
   public @Nullable AudioDeviceInfo getConnectedBluetoothDevice() {
-    return getAvailableCommunicationDevices().stream().filter(it -> AudioDeviceMapping.fromPlatformType(it.getType()) == SignalAudioManager.AudioDevice.BLUETOOTH).findAny().orElse(null);
+    return getAvailableCommunicationDevices().stream().filter(it -> AudioDeviceMapping.fromPlatformType(it.getType()) == SignalAudioManager.AudioDeviceType.BLUETOOTH).findAny().orElse(null);
   }
 
   @RequiresApi(31)
